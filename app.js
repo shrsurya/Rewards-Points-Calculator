@@ -5,12 +5,15 @@ const app = express();
 
 app.use(express.json());
 
-app.post('/monthlyReward', (req, res) => {
-    res.status(201).json({
-        status: "Received transactions"
-    })
-})
+app.use(require('./routes'));
+
+// handling all other routes
+app.all("*", (req, res) => {
+    res.status(404).json({
+        status: "Route does not exist"
+    });
+});
 
 app.listen(port, ()=>{
     console.log(`Server is up and running on port ${port}`);
-})
+});
