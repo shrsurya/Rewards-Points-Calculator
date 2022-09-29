@@ -1,10 +1,21 @@
 var router = require("express").Router();
+// var transaction = require("models");
 
 router.post("/", validateData, rewardCalc);
 
 function rewardCalc(req, res) {
+  var arr = JSON.parse(JSON.stringify(req.body));
+  var transactions = new Map(Object.entries(arr));
+  // console.log(transactions.get('T01'));
+  // var txnList;
+  // for (const [key, value] of transactions.entries()){
+
+  // }
+  
+
   res.status(201).json({
     data: req.body,
+    // data: arr,
   });
 }
 
