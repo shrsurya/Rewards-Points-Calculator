@@ -37,12 +37,16 @@ function generateTransactionTable(transactions) {
     );
 
     if (!txnTable.has(txn.merchant_code)) {
-      txnTable.set(txn.merchant_code, []);
+      txnTable.set(txn.merchant_code, {
+        total: 0,
+        txns: []
+      });
     }
-    txnTable.get(txn.merchant_code).push(txn);
+    txnTable.get(txn.merchant_code).txns.push(txn);
+    txnTable.get(txn.merchant_code).total += txn.amount_cents;
   }
   // used to print object details (all layers)
-  // console.log(util.inspect(txnTable, false, null, true));
+  console.log(util.inspect(txnTable, false, null, true));
 }
 
 function generateRules(){
