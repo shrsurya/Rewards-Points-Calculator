@@ -10,8 +10,15 @@ const PARTNER_MERCHANTS = new Set(["sportcheck", "tim_hortons", "subway"]);
 
 
 function rewardCalc(req, res) {
-  generateTransactionTable(req.body);
-  generateRules();
+  var txnTable = generateTransactionTable(req.body);
+  console.log(util.inspect(txnTable, false, null, true));
+  var rules = generateRules();
+  // console.log(util.inspect(rules, false, null, true));
+
+  for (let i =0; i< rules.length; i++){
+    var modified_txn_table = rules[i].apply(txnTable);
+    console.log(util.inspect(modified_txn_table, false, null, true));
+  }
 
   res.status(201).json({
     data: req.body,
@@ -46,16 +53,19 @@ function generateTransactionTable(transactions) {
     txnTable.get(txn.merchant_code).total += txn.amount_cents;
   }
   // used to print object details (all layers)
-  console.log(util.inspect(txnTable, false, null, true));
+  // console.log(util.inspect(txnTable, false, null, true));
+  return txnTable;
 }
 
 function generateRules(){
-  var MR1_1 = new MerchantRule("sportcheck", 7500);
-  var MR1_2 = new MerchantRule("tim_hortons", 2500);
-  var MR1_3 = new MerchantRule("subway", 2500);
+  var rules = [];
+  var MR1_1 = new MerchantRule("sportcheck", 2500);
+  var MR1_2 = new MerchantRule("tim_hortons", 100);
+  var MR1_3 = new MerchantRule("subway", 300);
   var R1_points = 500;
-  var RULE1 = new Rule(R1_points, [MR1_1, MR1_2, MR1_3]);
-  console.log(RULE1);
+  var r1 = new Rule(R1_points, [MR1_1, MR1_2, MR1_3]);
+  rules.push(r1);
+  return rules;
 }
 
 function validateData(req, res, next) {
