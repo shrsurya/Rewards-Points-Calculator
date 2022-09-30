@@ -1,17 +1,40 @@
+const Transaction = require("../../models/transaction");
 var router = require("express").Router();
-// var transaction = require("models");
+const util = require("util");
 
 router.post("/", validateData, rewardCalc);
 
-function rewardCalc(req, res) {
-  var arr = JSON.parse(JSON.stringify(req.body));
-  var transactions = new Map(Object.entries(arr));
-  // console.log(transactions.get('T01'));
-  // var txnList;
-  // for (const [key, value] of transactions.entries()){
+const PARTNER_MERCHANTS = new Set(["sportcheck", "tim_hortons", "subway"]);
+// {
+//   'sportcheck': {
+//     total: 0,
+//     txn: [t1,t2]
+//   }
+// }
+function generateTransactionTable(transactions) {
+  var txnTable = new Map();
 
-  // }
-  
+  // iterate through input json and get a list of txn objects
+  for (var key of Object.keys(transactions)) {
+    var txn = new Transaction(
+      key,
+      transactions[key].date,
+      transactions[key].merchant_code,
+      transactions[key].amount_cents
+    );
+
+    if (!txnTable.has(txn.merchant_code)) {
+      txnTable.set(txn.merchant_code, []);
+    }
+    txnTable.get(txn.merchant_code).push(txn);
+
+    // console.log(key + " -> " + JSON.stringify(txn));
+  }
+  console.log(util.inspect(txnTable, false, null, true));
+}
+
+function rewardCalc(req, res) {
+  generateTransactionTable(req.body);
 
   res.status(201).json({
     data: req.body,
