@@ -8,14 +8,13 @@ router.post("/", validateData, rewardCalc);
 
 const PARTNER_MERCHANTS = new Set(["sportcheck", "tim_hortons", "subway"]);
 
-
 function rewardCalc(req, res) {
   var txnTable = generateTransactionTable(req.body);
   console.log(util.inspect(txnTable, false, null, true));
   var rules = generateRules();
   // console.log(util.inspect(rules, false, null, true));
 
-  for (let i =0; i< rules.length; i++){
+  for (let i = 0; i < rules.length; i++) {
     var modified_txn_table = rules[i].apply(txnTable);
     console.log(util.inspect(modified_txn_table, false, null, true));
   }
@@ -46,7 +45,7 @@ function generateTransactionTable(transactions) {
     if (!txnTable.has(txn.merchant_code)) {
       txnTable.set(txn.merchant_code, {
         total: 0,
-        txns: []
+        txns: [],
       });
     }
     txnTable.get(txn.merchant_code).txns.push(txn);
@@ -57,14 +56,51 @@ function generateTransactionTable(transactions) {
   return txnTable;
 }
 
-function generateRules(){
+function generateRules() {
   var rules = [];
-  var MR1_1 = new MerchantRule("sportcheck", 2500);
-  var MR1_2 = new MerchantRule("tim_hortons", 100);
-  var MR1_3 = new MerchantRule("subway", 300);
-  var R1_points = 500;
-  var r1 = new Rule(R1_points, [MR1_1, MR1_2, MR1_3]);
+
+  // rule 1
+  var mr1_1 = new MerchantRule("sportcheck", 7500);
+  var mr1_2 = new MerchantRule("tim_hortons", 2500);
+  var mr1_3 = new MerchantRule("subway", 2500);
+  var r1_points = 500;
+  var r1 = new Rule(r1_points, [mr1_1, mr1_2, mr1_3]);
   rules.push(r1);
+
+  // rule 2
+  var mr2_1 = new MerchantRule("sportcheck", 7500);
+  var mr2_2 = new MerchantRule("tim_hortons", 2500);
+  var r2_points = 300;
+  var r2 = new Rule(r2_points, [mr2_1, mr2_2]);
+  rules.push(r2);
+
+  // rule 3
+  var mr3_1 = new MerchantRule("sportcheck", 7500);
+  var r3_points = 200;
+  var r3 = new Rule(r3_points, [mr3_1]);
+  rules.push(r3);
+
+  // rule 4
+  var mr4_1 = new MerchantRule("sportcheck", 2500);
+  var mr4_2 = new MerchantRule("tim_hortons", 1000);
+  var mr4_3 = new MerchantRule("subway", 1000);
+  var r4_points = 150;
+  var r4 = new Rule(r4_points, [mr4_1, mr4_2, mr4_3]);
+  rules.push(r4);
+
+  // rule 5
+  var mr5_1 = new MerchantRule("sportcheck", 2500);
+  var mr5_2 = new MerchantRule("tim_hortons", 1000);
+  var r5_points = 75;
+  var r5 = new Rule(r5_points, [mr5_1, mr5_2]);
+  rules.push(r5);
+
+  // rule 6
+  var mr6_1 = new MerchantRule("sportcheck", 2000);
+  var r6_points = 75;
+  var r6 = new Rule(r6_points, [mr6_1]);
+  rules.push(r6);
+
   return rules;
 }
 
