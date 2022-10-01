@@ -6,8 +6,6 @@ const Rule = require("../../models/rule");
 
 router.post("/", validateData, rewardCalc);
 
-const PARTNER_MERCHANTS = new Set(["sportcheck", "tim_hortons", "subway"]);
-
 function rewardCalc(req, res) {
   var txnTable = generateTransactionTable(req.body);
   console.log(util.inspect(txnTable, false, null, true));
@@ -25,14 +23,19 @@ function rewardCalc(req, res) {
   });
 }
 // {
-//   'sportcheck': {
-//     total: 0,
-//     txn: [t1,t2]
+//   total_points = 0
+//   m:{
+  //   'sportcheck': {
+  //     total: 0,
+  //     txn: [t1,t2]
+  //   }
 //   }
 // }
 function generateTransactionTable(transactions) {
-  var txnTable = new Map();
-
+  var txnTable = {
+    total_points : 0,
+    tmap: new Map()
+  };
   // iterate through input json and get a list of txn objects
   for (var key of Object.keys(transactions)) {
     var txn = new Transaction(
@@ -42,14 +45,14 @@ function generateTransactionTable(transactions) {
       transactions[key].amount_cents
     );
 
-    if (!txnTable.has(txn.merchant_code)) {
-      txnTable.set(txn.merchant_code, {
+    if (!txnTable.tmap.has(txn.merchant_code)) {
+      txnTable.tmap.set(txn.merchant_code, {
         total: 0,
         txns: [],
       });
     }
-    txnTable.get(txn.merchant_code).txns.push(txn);
-    txnTable.get(txn.merchant_code).total += txn.amount_cents;
+    txnTable.tmap.get(txn.merchant_code).txns.push(txn);
+    txnTable.tmap.get(txn.merchant_code).total += txn.amount_cents;
   }
   // used to print object details (all layers)
   // console.log(util.inspect(txnTable, false, null, true));
@@ -100,6 +103,12 @@ function generateRules() {
   var r6_points = 75;
   var r6 = new Rule(r6_points, [mr6_1]);
   rules.push(r6);
+
+  // rule 7
+  var mr7_1 = new MerchantRule("*", 100);
+  var r7_points = 1;
+  var r7 = new Rule(r7_points, [mr7_1]);
+  rules.push(r7);
 
   return rules;
 }
