@@ -3,26 +3,35 @@ var router = require("express").Router();
 const util = require("util");
 const MerchantRule = require("../../models/merchant_rule");
 const Rule = require("../../models/rule");
-
+const Combination = require("../../models/combination")
 router.post("/", validateData, rewardCalc);
 
 function rewardCalc(req, res) {
   var txnTable = generateTransactionTable(req.body);
-  console.log(util.inspect(txnTable, false, null, true));
   var rules = generateRules();
+  
+  const comboGen = new Combination();
+  comboGen.findBestCombo(txnTable, rules);
+  console.log(`maxpts = ${comboGen.maxpts}`);
+  console.log(util.inspect(comboGen.maxtable, false, null, true));
   // console.log(util.inspect(rules, false, null, true));
-  for (let i = 0; i < rules.length; i++) {
-    var modified_table = rules[i].apply(txnTable);
-    console.log(`Rule ${i+1}`);
-    console.log(util.inspect(modified_table, false, null, true));
-  }
-  console.log("org_table");
-  console.log(util.inspect(txnTable, false, null, true));
+  // for (let i = 0; i < rules.length; i++) {
+  //   var modified_table = rules[i].apply(txnTable);
+    // console.log(`Rule ${i+1}`);
+    // console.log(util.inspect(modified_table, false, null, true));
+  // }
+  // console.log("org_table");
+  // console.log(util.inspect(txnTable, false, null, true));
   res.status(201).json({
     data: req.body,
     // data: arr,
   });
 }
+
+
+
+
+
 // {
 //   total_points = 0
 //   tmap:{
@@ -107,10 +116,10 @@ function generateRules() {
   rules.push(r6);
 
   // rule 7
-  var mr7_1 = new MerchantRule("*", 100);
-  var r7_points = 1;
-  var r7 = new Rule(r7_points, [mr7_1]);
-  rules.push(r7);
+  // var mr7_1 = new MerchantRule("*", 100);
+  // var r7_points = 1;
+  // var r7 = new Rule(r7_points, [mr7_1]);
+  // rules.push(r7);
 
   return rules;
 }
@@ -122,5 +131,6 @@ function validateData(req, res, next) {
   // create a seperate func to parse transactions in required datastructure
   next();
 }
+
 
 module.exports = router;

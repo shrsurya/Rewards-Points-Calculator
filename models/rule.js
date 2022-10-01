@@ -20,12 +20,12 @@ class Rule {
 
   apply(ogTxnTable) {
     // validate that the rule applies to the current transaction Table
-    var txnTable = cloneDeep(ogTxnTable);
-    if (!this.validate(txnTable)) {
+    if (!this.validate(ogTxnTable)) {
       console.log("Validation failed");
       return null;
     }
-
+    console.log("Validated");
+    var txnTable = cloneDeep(ogTxnTable);
     for (var mr of this.merchant_rules) {
       // this condition only happens once
       if (mr.merchant === "*") {
@@ -56,7 +56,6 @@ class Rule {
             }
             txn.points = Math.round(txn.points);
           }
-          txnTable.total_points += this.points;
         }
       } else {
         // decrease applied promotion amount for the merchant
@@ -84,9 +83,9 @@ class Rule {
           }
           txn.points = Math.round(txn.points);
         }
-        txnTable.total_points += this.points;
       }
     }
+    txnTable.total_points += this.points;
     return txnTable;
   }
 
@@ -106,8 +105,6 @@ class Rule {
     // if merchant '*' exists, that rule works for all
     // as long as theres at least 1 merchant with the given mr.amount
     var star_merchant = this.merchant_rules.find((e) => e.merchant === "*");
-    var keys = Object.keys(txnTable.tmap);
-    console.log(util.inspect(keys, false, null, true));
 
     if (star_merchant && !this.hasAtLeast(star_merchant.amount, txnTable)) {
       return false;
@@ -121,8 +118,7 @@ class Rule {
       }
       if (
         !(
-          txnTable.tmap.has(mr.merchant) &&
-          txnTable.tmap.get(mr.merchant).total >= mr.amount
+          txnTable.tmap.has(mr.merchant) && txnTable.tmap.get(mr.merchant).total >= mr.amount
         )
       ) {
         return false;
