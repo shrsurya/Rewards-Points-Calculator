@@ -1,3 +1,6 @@
+const cloneDeep = require("lodash.clonedeep");
+const util = require("util");
+
 // Calculate the fraction for each rule in the constructor
 class Rule {
   constructor(points, merchant_rules) {
@@ -15,8 +18,9 @@ class Rule {
     }
   }
 
-  apply(txnTable) {
+  apply(ogTxnTable) {
     // validate that the rule applies to the current transaction Table
+    var txnTable = cloneDeep(ogTxnTable);
     if (!this.validate(txnTable)) {
       console.log("Validation failed");
       return null;
@@ -88,8 +92,9 @@ class Rule {
 
   hasAtLeast(amount, txnTable) {
     var total_amount_txnTable = 0;
-    for (var key of Object.keys(txnTable.tmap)) {
-      total_amount_txnTable += key.total;
+
+    for (var [key,value] of [...txnTable.tmap]) {
+      total_amount_txnTable += value.total;
       if (total_amount_txnTable >= amount) {
         return true;
       }
@@ -101,6 +106,9 @@ class Rule {
     // if merchant '*' exists, that rule works for all
     // as long as theres at least 1 merchant with the given mr.amount
     var star_merchant = this.merchant_rules.find((e) => e.merchant === "*");
+    var keys = Object.keys(txnTable.tmap);
+    console.log(util.inspect(keys, false, null, true));
+
     if (star_merchant && !this.hasAtLeast(star_merchant.amount, txnTable)) {
       return false;
     }

@@ -3,7 +3,6 @@ var router = require("express").Router();
 const util = require("util");
 const MerchantRule = require("../../models/merchant_rule");
 const Rule = require("../../models/rule");
-const cloneDeep = require('lodash.clonedeep');
 
 router.post("/", validateData, rewardCalc);
 
@@ -12,14 +11,13 @@ function rewardCalc(req, res) {
   console.log(util.inspect(txnTable, false, null, true));
   var rules = generateRules();
   // console.log(util.inspect(rules, false, null, true));
-  var org_table = cloneDeep(txnTable);
   for (let i = 0; i < rules.length; i++) {
-    rules[i].apply(txnTable);
+    var modified_table = rules[i].apply(txnTable);
     console.log(`Rule ${i+1}`);
-    console.log(util.inspect(txnTable, false, null, true));
+    console.log(util.inspect(modified_table, false, null, true));
   }
   console.log("org_table");
-  console.log(util.inspect(org_table, false, null, true));
+  console.log(util.inspect(txnTable, false, null, true));
   res.status(201).json({
     data: req.body,
     // data: arr,
@@ -57,6 +55,7 @@ function generateTransactionTable(transactions) {
     txnTable.tmap.get(txn.merchant_code).txns.push(txn);
     txnTable.tmap.get(txn.merchant_code).total += txn.amount_cents;
   }
+  // var keys = Object.keys(txnTable.tmap);
   // used to print object details (all layers)
   // console.log(util.inspect(txnTable, false, null, true));
   return txnTable;
