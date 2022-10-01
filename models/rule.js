@@ -32,11 +32,11 @@ class Rule {
         // add mr.amount points for each dollar remaining
         // for all merchants in txn map
         amount_to_dist = mr.amount;
-        for (var key of Object.keys(txnTable.tmap)) {
+        for (var [key, value] of [...txnTable.tmap]) {
           if (amount_to_dist <= 0) {
             break;
           }
-          for (var txn of key.txns) {
+          for (var txn of value.txns) {
             if (amount_to_dist <= 0) {
               break;
             }
