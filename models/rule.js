@@ -4,6 +4,8 @@ class Rule {
     this.merchant_rules = merchant_rules;
     this.points = points;
 
+    // distribute the weight for each merchant
+    // i.e percentage of amount contributing the total points
     var total = 0;
     for (const mr of merchant_rules) {
       total += mr.amount;
@@ -14,29 +16,50 @@ class Rule {
   }
 
   apply(txnTable) {
+    // validate that the rule applies to the current transaction Table
     if (!this.validate(txnTable)) {
+      console.log("Validation failed");
       return null;
     }
 
     for (var mr of this.merchant_rules) {
+      // this condition only happens once
       if (mr.merchant === "*") {
-        // add mr.amount points($1) for each dollar remaining
-        // get all transactions
-        for (var key of Object.keys(txnTable.tmap)){
-          var amount_to_dist = mr.amount;
-          for (var txn of key.txns) {
-            if (txn.amount_cents >= 100){
-              txnTable.total_points += txn.amount_cents;
-              txn.amount_cents = 0;
-            }
+        // add mr.amount points for each dollar remaining
+        // for all merchants in txn map
+        amount_to_dist = mr.amount;
+        for (var key of Object.keys(txnTable.tmap)) {
+          if (amount_to_dist <= 0) {
+            break;
           }
+          for (var txn of key.txns) {
+            if (amount_to_dist <= 0) {
+              break;
+            }
+            if (txn.amount_cents === 0) {
+              continue;
+            }
+            if (txn.amount_cents <= amount_to_dist) {
+              amount_to_dist -= txn.amount_cents;
+              txn.points +=
+                (txn.amount_cents / mr.amount) * mr.weight * this.points;
+              txn.amount_cents = 0;
+            } else {
+              txn.amount_cents -= amount_to_dist;
+              txn.points +=
+                (amount_to_dist / mr.amount) * mr.weight * this.points;
+              amount_to_dist = 0;
+            }
+            txn.points = Math.round(txn.points);
+          }
+          txnTable.total_points += this.points;
         }
-        txnTable.total_points
-
       } else {
+        // decrease applied promotion amount for the merchant
         txnTable.tmap.get(mr.merchant).total -= mr.amount;
         var amount_to_dist = mr.amount;
         var txns = txnTable.tmap.get(mr.merchant).txns;
+        // converting txn amount to points
         for (var txn of txns) {
           if (amount_to_dist <= 0) {
             break;
@@ -57,15 +80,17 @@ class Rule {
           }
           txn.points = Math.round(txn.points);
         }
-        txnTable.total_points+=this.points;
+        txnTable.total_points += this.points;
       }
     }
     return txnTable;
   }
 
-  hasADollar(txnTable) {
+  hasAtLeast(amount, txnTable) {
+    var total_amount_txnTable = 0;
     for (var key of Object.keys(txnTable.tmap)) {
-      if (key.total >= 1) {
+      total_amount_txnTable += key.total;
+      if (total_amount_txnTable >= amount) {
         return true;
       }
     }
@@ -73,11 +98,15 @@ class Rule {
   }
 
   validate(txnTable) {
-    // iterate through merchant_rules: MRi
-    // if MRi in txnTable and txnTable[MRi.merchant] >= MRi.amount
-    if ((this.merchant_rules.find(e => e.merchant === "*") && !this.hasADollar(txnTable))) {
+    // if merchant '*' exists, that rule works for all
+    // as long as theres at least 1 merchant with the given mr.amount
+    var star_merchant = this.merchant_rules.find((e) => e.merchant === "*");
+    if (star_merchant && !this.hasAtLeast(star_merchant.amount, txnTable)) {
       return false;
     }
+
+    // iterate through merchant_rules: MRi
+    // if MRi in txnTable and txnTable[MRi.merchant] >= MRi.amount
     for (var mr of this.merchant_rules) {
       if (mr.merchant === "*") {
         continue;

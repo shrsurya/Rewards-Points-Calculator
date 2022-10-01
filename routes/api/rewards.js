@@ -3,6 +3,7 @@ var router = require("express").Router();
 const util = require("util");
 const MerchantRule = require("../../models/merchant_rule");
 const Rule = require("../../models/rule");
+const cloneDeep = require('lodash.clonedeep');
 
 router.post("/", validateData, rewardCalc);
 
@@ -11,12 +12,14 @@ function rewardCalc(req, res) {
   console.log(util.inspect(txnTable, false, null, true));
   var rules = generateRules();
   // console.log(util.inspect(rules, false, null, true));
-
+  var org_table = cloneDeep(txnTable);
   for (let i = 0; i < rules.length; i++) {
-    var modified_txn_table = rules[i].apply(txnTable);
-    console.log(util.inspect(modified_txn_table, false, null, true));
+    rules[i].apply(txnTable);
+    console.log(`Rule ${i+1}`);
+    console.log(util.inspect(txnTable, false, null, true));
   }
-
+  console.log("org_table");
+  console.log(util.inspect(org_table, false, null, true));
   res.status(201).json({
     data: req.body,
     // data: arr,
@@ -24,10 +27,10 @@ function rewardCalc(req, res) {
 }
 // {
 //   total_points = 0
-//   m:{
+//   tmap:{
   //   'sportcheck': {
   //     total: 0,
-  //     txn: [t1,t2]
+  //     txns: [t1,t2]
   //   }
 //   }
 // }
