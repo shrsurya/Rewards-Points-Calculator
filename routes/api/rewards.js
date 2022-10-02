@@ -3,13 +3,11 @@ var router = require("express").Router();
 const util = require("util");
 const MerchantRule = require("../../models/merchant_rule");
 const Rule = require("../../models/rule");
-router.post("/", validateData, rewardCalc);
+router.post("/", rewardCalc);
 
 function rewardCalc(req, res, next) {
   // first validate the data
-  // validateData(req, res);
   try {
-    console.log(req.body);
     var txnTable = generateTransactionTable(req.body);
     // Rules generated with calculated priority
     var rules = generateRules();
@@ -172,13 +170,6 @@ function generateRules() {
   rules.push(r3);
 
   return rules;
-}
-
-function validateData(req, res, next) {
-  // check if json is valid
-  // check if all transactions are in the same month
-  // check for empty transaction list
-  next();
 }
 
 module.exports = router;
