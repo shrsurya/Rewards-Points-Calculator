@@ -6,38 +6,46 @@ const Rule = require("../../models/rule");
 router.post("/", validateData, rewardCalc);
 
 function rewardCalc(req, res) {
+  // validateData(req, res);
+  // first validate the data
   var txnTable = generateTransactionTable(req.body);
-  var rules = generateRules(); // Rules generated with calculated priority
+  // Rules generated with calculated priority
+  var rules = generateRules(); 
 
-  // console.log(util.inspect(txnTable, false, null, true));
+  // apply rules to the transaction table
   for (let i = 0; i < rules.length; i++) {
     var ret = true;
     while (ret) {
       ret = rules[i].apply(txnTable);
     }
   }
-
+  // apply the 7th rule for remaining $
   applyRule7(txnTable);
+  
+  res.status(201).json({
+    TotalPoints: txnTable.total_points,
+    IndividualPoints: getPointsToReturn(txnTable)
+  });
+}
+
+function getPointsToReturn(txnTable){
   var txnID_to_points = new Map();
-  for (var [key, value] of [...txnTable.tmap]){
+  for (var [key, value] of [...txnTable.tmap]) {
     for (var txn of value.txns) {
       txnID_to_points[txn.id] = txn.points;
     }
   }
-  // console.log(util.inspect(txnTable, false, null, true));
-  res.status(201).json({
-      TotalPoints: txnTable.total_points,
-      TxnPoints: txnID_to_points
-  });
+  return txnID_to_points;
 }
 
 function applyRule7(txnTable) {
-  // var amount_to_dist = Math.floor(txnTable.total_amount/100);
-  var amount_to_dist = txnTable.cumulative_amount - (txnTable.cumulative_amount % 100);
-  txnTable.total_points += amount_to_dist/100;
+  // % 100 with elminate the cents
+  var amount_to_dist =
+    txnTable.cumulative_amount - (txnTable.cumulative_amount % 100);
+  txnTable.total_points += amount_to_dist / 100;
   txnTable.cumulative_amount -= amount_to_dist;
-  // key: merchant_name
-  // value: txns
+
+  // distribute points to each transaction
   for (var [key, value] of [...txnTable.tmap]) {
     if (amount_to_dist <= 0) {
       break;
@@ -55,24 +63,24 @@ function applyRule7(txnTable) {
       }
       if (txn.amount_cents <= amount_to_dist) {
         amount_to_dist -= txn.amount_cents;
-        txn.points +=  txn.amount_cents/100;
+        txn.points += txn.amount_cents / 100;
         txn.amount_cents = 0;
-      }
-      else{
-        txn.points += amount_to_dist/100;
+      } else {
+        txn.points += amount_to_dist / 100;
         txn.amount_cents -= amount_to_dist;
         amount_to_dist = 0;
       }
     }
   }
 }
+// Structure
 // {
 //   total_points = 0
 //   tmap:{
-//   'sportcheck': {
-//     total: 0,
-//     txns: [t1,t2]
-//   }
+//     'sportcheck': {
+//       total: 0,
+//       txns: [t1,t2]
+//     }
 //   }
 // }
 function generateTransactionTable(transactions) {
@@ -84,12 +92,18 @@ function generateTransactionTable(transactions) {
   // iterate through input json and get a list of txn objects
   for (var key of Object.keys(transactions)) {
     txnTable.cumulative_amount += transactions[key].amount_cents;
-    var txn = new Transaction(
-      key,
-      transactions[key].date,
-      transactions[key].merchant_code,
-      transactions[key].amount_cents
-    );
+    try{
+      var txn = new Transaction(
+        key,
+        transactions[key].date,
+        transactions[key].merchant_code,
+        transactions[key].amount_cents
+      );
+    }
+    catch(e){
+      // TODO: if unable to create txn obj, res = err
+      next()
+    }
 
     if (!txnTable.tmap.has(txn.merchant_code)) {
       txnTable.tmap.set(txn.merchant_code, {
@@ -100,7 +114,6 @@ function generateTransactionTable(transactions) {
     txnTable.tmap.get(txn.merchant_code).txns.push(txn);
     txnTable.tmap.get(txn.merchant_code).total += txn.amount_cents;
   }
-  // var keys = Object.keys(txnTable.tmap);
   // used to print object details (all layers)
   // console.log(util.inspect(txnTable, false, null, true));
   return txnTable;
@@ -151,21 +164,19 @@ function generateRules() {
   var r3 = new Rule(r3_points, [mr3_1]);
   rules.push(r3);
 
-  // // rule 7
-  // var mr7_1 = new MerchantRule("*", 100);
-  // var r7_points = 1;
-  // var r7 = new Rule(r7_points, [mr7_1]);
-  // rules.push(r7);
-
   return rules;
 }
 
 function validateData(req, res, next) {
   // check if json is valid
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    next();
+  }
   // check if all transactions are in the same month
   // check for empty transaction list
   // create a seperate func to parse transactions in required datastructure
-  next();
 }
 
 module.exports = router;
