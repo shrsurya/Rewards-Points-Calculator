@@ -1,5 +1,5 @@
-var router = require('express').Router();
+var router = require("express").Router();
 
-router.use('/rewards', require('./rewards'));
+router.use("/rewards", require("./rewards"));
 
 module.exports = router;

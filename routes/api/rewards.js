@@ -5,30 +5,35 @@ const MerchantRule = require("../../models/merchant_rule");
 const Rule = require("../../models/rule");
 router.post("/", validateData, rewardCalc);
 
-function rewardCalc(req, res) {
-  // validateData(req, res);
+function rewardCalc(req, res, next) {
   // first validate the data
-  var txnTable = generateTransactionTable(req.body);
-  // Rules generated with calculated priority
-  var rules = generateRules(); 
+  // validateData(req, res);
+  try {
+    console.log(req.body);
+    var txnTable = generateTransactionTable(req.body);
+    // Rules generated with calculated priority
+    var rules = generateRules();
 
-  // apply rules to the transaction table
-  for (let i = 0; i < rules.length; i++) {
-    var ret = true;
-    while (ret) {
-      ret = rules[i].apply(txnTable);
+    // apply rules to the transaction table
+    for (let i = 0; i < rules.length; i++) {
+      var ret = true;
+      while (ret) {
+        ret = rules[i].apply(txnTable);
+      }
     }
+    // apply the 7th rule for remaining $
+    applyRule7(txnTable);
+    // console.log(util.inspect(txnTable, false, null, true));
+    res.status(201).json({
+      TotalPoints: txnTable.total_points,
+      IndividualPoints: getPointsToReturn(txnTable),
+    });
+  } catch (e) {
+    next(e);
   }
-  // apply the 7th rule for remaining $
-  applyRule7(txnTable);
-  
-  res.status(201).json({
-    TotalPoints: txnTable.total_points,
-    IndividualPoints: getPointsToReturn(txnTable)
-  });
 }
 
-function getPointsToReturn(txnTable){
+function getPointsToReturn(txnTable) {
   var txnID_to_points = new Map();
   for (var [key, value] of [...txnTable.tmap]) {
     for (var txn of value.txns) {
@@ -46,7 +51,7 @@ function applyRule7(txnTable) {
   txnTable.cumulative_amount -= amount_to_dist;
 
   // distribute points to each transaction
-  for (var [key, value] of [...txnTable.tmap]) {
+  for (var [_, value] of [...txnTable.tmap]) {
     if (amount_to_dist <= 0) {
       break;
     }
@@ -92,17 +97,16 @@ function generateTransactionTable(transactions) {
   // iterate through input json and get a list of txn objects
   for (var key of Object.keys(transactions)) {
     txnTable.cumulative_amount += transactions[key].amount_cents;
-    try{
+    try {
       var txn = new Transaction(
         key,
         transactions[key].date,
         transactions[key].merchant_code,
         transactions[key].amount_cents
       );
-    }
-    catch(e){
+    } catch (e) {
       // TODO: if unable to create txn obj, res = err
-      next()
+      next();
     }
 
     if (!txnTable.tmap.has(txn.merchant_code)) {
@@ -169,14 +173,9 @@ function generateRules() {
 
 function validateData(req, res, next) {
   // check if json is valid
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    next();
-  }
   // check if all transactions are in the same month
   // check for empty transaction list
-  // create a seperate func to parse transactions in required datastructure
+  next();
 }
 
 module.exports = router;
