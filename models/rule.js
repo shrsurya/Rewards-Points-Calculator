@@ -21,10 +21,10 @@ class Rule {
   apply(txnTable) {
     // validate that the rule applies to the current transaction Table
     if (!this.validate(txnTable)) {
-      console.log("Validation failed");
+      // console.log("Validation failed");
       return false;
     }
-    console.log("Validated");
+    // console.log("Validated");
     for (var mr of this.merchant_rules) {
         // decrease cumulative amount in the table
         txnTable.cumulative_amount -= mr.amount;

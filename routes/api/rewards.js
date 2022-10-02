@@ -9,7 +9,7 @@ function rewardCalc(req, res) {
   var txnTable = generateTransactionTable(req.body);
   var rules = generateRules(); // Rules generated with calculated priority
 
-  console.log(util.inspect(txnTable, false, null, true));
+  // console.log(util.inspect(txnTable, false, null, true));
   for (let i = 0; i < rules.length; i++) {
     var ret = true;
     while (ret) {
@@ -17,24 +17,35 @@ function rewardCalc(req, res) {
     }
   }
 
-  // applyRule7(txnTable);
-
-  console.log(util.inspect(txnTable, false, null, true));
+  applyRule7(txnTable);
+  var txnID_to_points = new Map();
+  for (var [key, value] of [...txnTable.tmap]){
+    for (var txn of value.txns) {
+      txnID_to_points[txn.id] = txn.points;
+    }
+  }
+  // console.log(util.inspect(txnTable, false, null, true));
   res.status(201).json({
-    data: {
-      total: txnTable.total_points,
-      txns: JSON.stringify(...txnTable.tmap),
-    },
+      TotalPoints: txnTable.total_points,
+      TxnPoints: txnID_to_points
   });
 }
 
 function applyRule7(txnTable) {
-  var amount_to_dist = Math.floor(txnTable.total_amount/100);
-  txnTable.total_points += amount_to_dist;
+  // var amount_to_dist = Math.floor(txnTable.total_amount/100);
+  var amount_to_dist = txnTable.cumulative_amount - (txnTable.cumulative_amount % 100);
+  txnTable.total_points += amount_to_dist/100;
+  txnTable.cumulative_amount -= amount_to_dist;
+  // key: merchant_name
+  // value: txns
   for (var [key, value] of [...txnTable.tmap]) {
     if (amount_to_dist <= 0) {
       break;
     }
+    if (value.total == 0) {
+      continue;
+    }
+    // sequentially distribute amount for each transaction
     for (var txn of value.txns) {
       if (amount_to_dist <= 0) {
         break;
@@ -42,11 +53,16 @@ function applyRule7(txnTable) {
       if (txn.amount_cents === 0) {
         continue;
       }
-      
-      amount_to_dist -= txn.amount_cents;
-      txn.points +=  txn.amount_cents
-      txn.amount_cents = 0;
-      
+      if (txn.amount_cents <= amount_to_dist) {
+        amount_to_dist -= txn.amount_cents;
+        txn.points +=  txn.amount_cents/100;
+        txn.amount_cents = 0;
+      }
+      else{
+        txn.points += amount_to_dist/100;
+        txn.amount_cents -= amount_to_dist;
+        amount_to_dist = 0;
+      }
     }
   }
 }
