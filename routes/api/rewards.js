@@ -97,17 +97,20 @@ function generateTransactionTable(transactions) {
   // iterate through input json and get a list of txn objects
   for (var key of Object.keys(transactions)) {
     txnTable.cumulative_amount += transactions[key].amount_cents;
-    try {
-      var txn = new Transaction(
-        key,
-        transactions[key].date,
-        transactions[key].merchant_code,
-        transactions[key].amount_cents
-      );
-    } catch (e) {
-      // TODO: if unable to create txn obj, res = err
-      next();
+
+    if (
+      transactions[key].date == null ||
+      transactions[key].merchant_code == null ||
+      transactions[key].amount_cents == null
+    ) {
+      throw new Error("Missing Fields in Transaction Data");
     }
+    var txn = new Transaction(
+      key,
+      transactions[key].date,
+      transactions[key].merchant_code,
+      transactions[key].amount_cents
+    );
 
     if (!txnTable.tmap.has(txn.merchant_code)) {
       txnTable.tmap.set(txn.merchant_code, {
