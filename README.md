@@ -1,6 +1,6 @@
 # Credit Card Rewards Calculator API
 
-Instructions to user API:
+Instructions to use API:
 ```
 npm i
 node app.js
