@@ -26,10 +26,8 @@ class Rule {
   apply(txnTable) {
     // validate that the rule applies to the current transaction Table
     if (!this.validate(txnTable)) {
-      // console.log("Validation failed");
       return false;
     }
-    // console.log("Validated");
     for (var mr of this.merchant_rules) {
       // decrease cumulative amount in the table
       txnTable.cumulative_amount -= mr.amount;
@@ -55,9 +53,6 @@ class Rule {
           txn.points += (amount_to_dist / mr.amount) * mr.weight * this.points;
           amount_to_dist = 0;
         }
-        // TODO: manage split rounding
-        // i.e when 3 merchants have % split: eg 83.33, 33.34, 33.34
-        // round will not cumulatively add to full value
         txn.points = Math.round(txn.points);
       }
     }

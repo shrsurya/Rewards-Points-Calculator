@@ -1,6 +1,5 @@
 const Transaction = require("../../models/transaction");
 var router = require("express").Router();
-const util = require("util");
 const MerchantRule = require("../../models/merchant_rule");
 const Rule = require("../../models/rule");
 router.post("/", rewardCalc);
@@ -11,18 +10,21 @@ function rewardCalc(req, res, next) {
     var txnTable = generateTransactionTable(req.body);
     // Rules generated with calculated priority
     var rules = generateRules();
+    // Determine priority of rules
     rules = getPriorityRuleList(rules, txnTable);
 
     // apply rules to the transaction table
+    // in the order of priority
     for (let i = 0; i < rules.length; i++) {
       var ret = true;
       while (ret) {
         ret = rules[i].apply(txnTable);
       }
     }
-    // apply the 7th rule for remaining $
+    // apply the 7th rule for remaining $ amount
     applyRule7(txnTable);
-    // console.log(util.inspect(txnTable, false, null, true));
+
+    // send response back
     res.status(201).json({
       TotalPoints: txnTable.total_points,
       IndividualPoints: getPointsToReturn(txnTable),
@@ -33,8 +35,9 @@ function rewardCalc(req, res, next) {
 }
 
 function getPointsToReturn(txnTable) {
+  // helper function to print response json
   var txnID_to_points = new Map();
-  for (var [key, value] of [...txnTable.tmap]) {
+  for (var [_, value] of [...txnTable.tmap]) {
     for (var txn of value.txns) {
       txnID_to_points[txn.id] = txn.points;
     }
@@ -77,7 +80,7 @@ function applyRule7(txnTable) {
     }
   }
 }
-// Structure
+// txnTable Structure
 // {
 //   total_points = 0
 //   tmap:{
@@ -121,7 +124,6 @@ function generateTransactionTable(transactions) {
     txnTable.tmap.get(txn.merchant_code).total += txn.amount_cents;
   }
   // used to print object details (all layers)
-  // console.log(util.inspect(txnTable, false, null, true));
   return txnTable;
 }
 
