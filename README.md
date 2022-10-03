@@ -1,4 +1,4 @@
-# CapitalOne Rewards Calculator API
+# Credit Card Rewards Calculator API
 
 Instructions to user API:
 ```
