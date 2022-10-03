@@ -11,6 +11,7 @@ function rewardCalc(req, res, next) {
     var txnTable = generateTransactionTable(req.body);
     // Rules generated with calculated priority
     var rules = generateRules();
+    rules = getPriorityRuleList(rules, txnTable);
 
     // apply rules to the transaction table
     for (let i = 0; i < rules.length; i++) {
@@ -129,26 +130,39 @@ function generateRules() {
 
   // rule 1
   var mr1_1 = new MerchantRule("sportcheck", 7500);
-  var mr1_2 = new MerchantRule("tim_hortons", 2500);
+  var mr1_2 = new MerchantRule("tim_hortans", 2500);
   var mr1_3 = new MerchantRule("subway", 2500);
   var r1_points = 500;
   var r1 = new Rule(r1_points, [mr1_1, mr1_2, mr1_3]);
   rules.push(r1);
 
+  // rule 2
+  var mr2_1 = new MerchantRule("sportcheck", 7500);
+  var mr2_2 = new MerchantRule("tim_hortans", 2500);
+  var r2_points = 300;
+  var r2 = new Rule(r2_points, [mr2_1, mr2_2]);
+  rules.push(r2);
+
+  // rule 3
+  var mr3_1 = new MerchantRule("sportcheck", 7500);
+  var r3_points = 200;
+  var r3 = new Rule(r3_points, [mr3_1]);
+  rules.push(r3);
+
   // rule 4
   var mr4_1 = new MerchantRule("sportcheck", 2500);
-  var mr4_2 = new MerchantRule("tim_hortons", 1000);
+  var mr4_2 = new MerchantRule("tim_hortans", 1000);
   var mr4_3 = new MerchantRule("subway", 1000);
   var r4_points = 150;
   var r4 = new Rule(r4_points, [mr4_1, mr4_2, mr4_3]);
   rules.push(r4);
 
-  // rule 2
-  var mr2_1 = new MerchantRule("sportcheck", 7500);
-  var mr2_2 = new MerchantRule("tim_hortons", 2500);
-  var r2_points = 300;
-  var r2 = new Rule(r2_points, [mr2_1, mr2_2]);
-  rules.push(r2);
+  // rule 5
+  var mr5_1 = new MerchantRule("sportcheck", 2500);
+  var mr5_2 = new MerchantRule("tim_hortans", 1000);
+  var r5_points = 75;
+  var r5 = new Rule(r5_points, [mr5_1, mr5_2]);
+  rules.push(r5);
 
   // rule 6
   var mr6_1 = new MerchantRule("sportcheck", 2000);
@@ -156,18 +170,30 @@ function generateRules() {
   var r6 = new Rule(r6_points, [mr6_1]);
   rules.push(r6);
 
-  // rule 5
-  var mr5_1 = new MerchantRule("sportcheck", 2500);
-  var mr5_2 = new MerchantRule("tim_hortons", 1000);
-  var r5_points = 75;
-  var r5 = new Rule(r5_points, [mr5_1, mr5_2]);
-  rules.push(r5);
+  return rules;
+}
 
-  // rule 3
-  var mr3_1 = new MerchantRule("sportcheck", 7500);
-  var r3_points = 200;
-  var r3 = new Rule(r3_points, [mr3_1]);
-  rules.push(r3);
+function getPriorityRuleList(rules, txnTable) {
+  var all_merchants = [];
+  for (var [key, _] of [...txnTable.tmap]) {
+    all_merchants.push(key);
+  }
+  for (let i = 0; i < rules.length; i++) {
+    for (var mi of all_merchants) {
+      // check if merchant is in rule
+      if (rules[i].merchant_names.has(mi)) {
+        rules[i].total_points_per_dollar +=
+          (rules[i].points / rules[i].total_dollars) * 100;
+      } else {
+        rules[i].total_points_per_dollar += 1;
+      }
+    }
+  }
+
+  // sort the rules using total_points_per_dollar
+  rules.sort((a, b) => {
+    return b.total_points_per_dollar - a.total_points_per_dollar;
+  });
 
   return rules;
 }

@@ -3,15 +3,23 @@ class Rule {
   constructor(points, merchant_rules) {
     this.merchant_rules = merchant_rules;
     this.points = points;
+    this.total_points_per_dollar = 0;
+    this.total_dollars = 0;
+    this.merchant_names = new Set();
 
     // distribute the weight for each merchant
     // i.e percentage of amount contributing the total points
-    var total = 0;
+    this.total_dollars = 0;
     for (const mr of merchant_rules) {
-      total += mr.amount;
+      this.total_dollars += mr.amount;
     }
     for (const mr of merchant_rules) {
-      mr.weight = mr.amount / total;
+      mr.weight = mr.amount / this.total_dollars;
+    }
+
+    // get merchant name list
+    for (const mr of merchant_rules){
+      this.merchant_names.add(mr.merchant);
     }
   }
 
